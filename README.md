@@ -17,6 +17,9 @@ When you write your application to run on a VMSS, you have three options: have t
 ## How it works
 First off, my service reports health.  It does this using the health reporting extension and exposing a /health endpoint that returns 200 when the service is healthy.  cycle-servers.ps1 goes through each instance in the VMSS and reimages them one by one, not starting the next one until the current one is reimaged and healthy again.  This ensures uptime in that only one VM is being reimaged at a time.
 
+## Prerequisites
+This script uses the Azure CLI.  Get it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest).  Before running this script, ensure the machine you are running on is authenticated.  You can do this by logging in (`az login`) on your local machine or by using the [Azure CLI task](https://github.com/microsoft/azure-pipelines-tasks/blob/master/Tasks/AzureCLIV2/Readme.md) in Azure DevOps.  Other methods for authenticating are enumerated [here](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli?view=azure-cli-latest).
+
 ## Use it!
 There are 3 parameters:
 - `ResourceGroupName`: Resource Group Name the VMSS belongs to
