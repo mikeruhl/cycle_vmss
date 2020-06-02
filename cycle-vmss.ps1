@@ -92,34 +92,34 @@ function Scale-Up {
 
 ### Check for Initial Health of cluster
 if ($false -eq $IgnoreInitialHealth) {
-    Write-Host "(Get-Date) Preparing to cycle instances.  Getting health score of all instances to determine scale set health."
+    Write-Host "$(Get-Date) Preparing to cycle instances.  Getting health score of all instances to determine scale set health."
     $instances = az vmss list-instances -g $ResourceGroupName -n $ScaleSetName | ConvertFrom-Json
     $initialHealth = Get-InitialHealth -instances $instances;
     if ($initialHealth -lt ($instances.Length * 7)) {
-        Write-Error "(Get-Date) Instance found to be unhealthy, cannot continue with cycle until instance made healthy";
+        Write-Error "$(Get-Date) Instance found to be unhealthy, cannot continue with cycle until instance made healthy";
         exit 1;
     }
 }
 else {
-    Write-Host "(Get-Date) Skipping initial health check."
+    Write-Host "$(Get-Date) Skipping initial health check."
 }
 
 ### Scale up if only 1 server
 if($instances.Length -eq 1 -and $false -eq $IgnoreAvailability) {
-    Write-Host "(Get-Date) Only one instance found.  Scaling up to two for availability";
+    Write-Host "$(Get-Date) Only one instance found.  Scaling up to two for availability";
    Scale-Up -ResourceGroupName $ResourceGroupName -ScaleSetName $ScaleSetName
 }
 
-Write-Host "(Get-Date) Beginning Server Cycle."
+Write-Host "$(Get-Date) Beginning Server Cycle."
 foreach ($i in $instances) {
     $timeOut = (Get-Date).AddMinutes($TimeoutMinutes);
     $state = az vmss get-instance-view -g $ResourceGroupName -n $ScaleSetName --instance-id $i.instanceId | ConvertFrom-Json
     $stateScore = Get-VmStatus -state $state
     if ($stateScore -lt 7) {
-        Write-Error "(Get-Date) Instance [$($i.instanceId)] found to be unhealthy, cannot continue with cycle until instance made healthy";
+        Write-Error "$(Get-Date) Instance [$($i.instanceId)] found to be unhealthy, cannot continue with cycle until instance made healthy";
         exit 1;
     }
-    Write-Output "(Get-Date) Instance [$($i.instanceId)] Beginning reimage."
+    Write-Output "$(Get-Date) Instance [$($i.instanceId)] Beginning reimage."
     # reimage
     az vmss reimage --instance-id $i.instanceId -n $ScaleSetName -g $ResourceGroupName --no-wait
     $processStarted = $false;
@@ -130,21 +130,21 @@ foreach ($i in $instances) {
         if ($processStarted -eq $false) {
             if ($upgradeScore -lt 7) {
                 $processStarted = $true;
-                Write-Output "(Get-Date) Instance [$($i.instanceId)] Reimage has started."
+                Write-Output "$(Get-Date) Instance [$($i.instanceId)] Reimage has started."
             }
         }
         elseif ($upgradeScore -ge 7) {
             $processOver = $true
-            Write-Output "(Get-Date) Instance [$($i.instanceId)] Reimage has completed, moving on."
+            Write-Output "$(Get-Date) Instance [$($i.instanceId)] Reimage has completed, moving on."
         }
         else {
             if ($timeOut -lt (Get-Date)) {
-                Write-Error "(Get-Date) Instance [$($i.instanceId)] Timeout Occurred.  Please complete manually."
+                Write-Error "$(Get-Date) Instance [$($i.instanceId)] Timeout Occurred.  Please complete manually."
                 exit 1;
             }
-            Write-Output "(Get-Date) Instance [$($i.instanceId)] Reimage in progress. (Score: $($upgradeScore))"
+            Write-Output "$(Get-Date) Instance [$($i.instanceId)] Reimage in progress. (Score: $($upgradeScore))"
             Start-Sleep -s 15
         }
     }
-    Write-Output "(Get-Date) Reimage completed successfully";
+    Write-Output "$(Get-Date) Reimage completed successfully";
 }
